@@ -47,7 +47,9 @@ async function getStats() {
     const members = await WarMember.find({}).lean();
     const totalAttacks = members.reduce((s, m) => s + (m.attackCount || 0), 0);
     const totalStars = members.reduce((s, m) => s + (m.stars || 0), 0);
-    const threeStars = members.reduce((s, m) => s + (m.attacks?.filter((a: { stars?: number }) => a.stars === 3).length || 0), 0);
+    const countThreeStars = (attacks: Array<{ stars?: number }>) =>
+      attacks.filter((a) => a.stars === 3).length;
+    const threeStars = members.reduce((s, m) => s + countThreeStars(m.attacks || []), 0);
 
     return {
       totalWars,

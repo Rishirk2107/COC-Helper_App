@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import WarMember from '@/lib/models/WarMember';
 import Player from '@/lib/models/Player';
+import type { Attack } from '@/lib/types';
 
 const COC_API_BASE = 'https://api.clashofclans.com/v1';
 
@@ -38,7 +39,7 @@ export async function GET(
     const totalAttacks = warStats.reduce((sum, w) => sum + (w.attackCount || 0), 0);
     const totalDestruction = warStats.reduce((sum, w) => sum + ((w.destructionPercentage || 0) * (w.attackCount || 0)), 0);
     const threeStarAttacks = warStats.reduce((sum, w) => {
-      return sum + (w.attacks?.filter((a: { stars?: number }) => a.stars === 3).length || 0);
+      return sum + (w.attacks?.filter((a: Attack) => a.stars === 3).length || 0);
     }, 0);
 
     const playerDoc = await Player.findOneAndUpdate(
