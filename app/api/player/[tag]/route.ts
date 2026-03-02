@@ -4,8 +4,6 @@ import WarMember from '@/lib/models/WarMember';
 import Player from '@/lib/models/Player';
 import type { Attack } from '@/lib/types';
 
-const COC_API_BASE = 'https://api.clashofclans.com/v1';
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { tag: string } }
@@ -13,7 +11,6 @@ export async function GET(
   try {
     const tag = decodeURIComponent(params.tag);
     const apiToken = process.env.COC_API_TOKEN;
-    const clanTag = process.env.CLAN_TAG;
     const EXPRESS_API_URL = process.env.EXPRESS_API_URL || 'http://localhost:4000';
 
     await connectToDatabase();

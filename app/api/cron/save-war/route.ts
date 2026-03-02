@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import War from '@/lib/models/War';
 
-const COC_API_BASE = 'https://api.clashofclans.com/v1';
-
 interface CocApiError {
   reason?: string;
   message?: string;

@@ -4,8 +4,6 @@ import War from '@/lib/models/War';
 import WarMember from '@/lib/models/WarMember';
 import type { Attack } from '@/lib/types';
 
-const COC_API_BASE = 'https://api.clashofclans.com/v1';
-
 function isDatabaseUnavailable(error: unknown): boolean {
   if (!error || typeof error !== 'object') {
     return false;
