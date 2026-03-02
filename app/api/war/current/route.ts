@@ -6,10 +6,25 @@ import type { Attack } from '@/lib/types';
 
 const COC_API_BASE = 'https://api.clashofclans.com/v1';
 
+function isDatabaseUnavailable(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const maybeErr = error as { name?: string; code?: string; syscall?: string };
+
+  return (
+    maybeErr.name === 'MongooseServerSelectionError' ||
+    maybeErr.code === 'ECONNREFUSED' ||
+    maybeErr.syscall === 'querySrv'
+  );
+}
+
 export async function GET() {
   try {
     const clanTag = process.env.CLAN_TAG;
     const apiToken = process.env.COC_API_TOKEN;
+    const EXPRESS_API_URL = process.env.EXPRESS_API_URL || 'http://localhost:4000';
 
     if (!clanTag || !apiToken) {
       return NextResponse.json(
@@ -18,22 +33,19 @@ export async function GET() {
       );
     }
 
-    const encodedTag = encodeURIComponent(clanTag);
-    const response = await fetch(
-      `${COC_API_BASE}/clans/${encodedTag}/currentwar`,
-      {
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          'Content-Type': 'application/json',
-        },
-        next: { revalidate: 60 },
-      }
-    );
+    const response = await fetch(`${EXPRESS_API_URL}/api/war/current`, {
+      headers: {
+        'x-api-token': apiToken,
+        'x-clan-tag': clanTag,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
       return NextResponse.json(
-        { error: 'Failed to fetch war data from COC API', details: errorData },
+        { error: 'Failed to fetch war data from Express API', details: errorData },
         { status: response.status }
       );
     }
@@ -41,7 +53,10 @@ export async function GET() {
     const warData = await response.json();
 
     if (warData.state === 'notInWar') {
-      return NextResponse.json({ state: 'notInWar', message: 'Clan is not currently in a war' });
+      return NextResponse.json({
+        ...warData,
+        message: 'Clan is not currently in a war',
+      });
     }
 
     await connectToDatabase();
@@ -85,6 +100,14 @@ export async function GET() {
     return NextResponse.json(savedWar);
   } catch (error) {
     console.error('Error fetching/storing war data:', error);
+
+    if (isDatabaseUnavailable(error)) {
+      return NextResponse.json(
+        { error: 'Database unavailable. Please try again shortly.' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

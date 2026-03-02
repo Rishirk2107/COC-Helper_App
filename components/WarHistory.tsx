@@ -1,18 +1,22 @@
-import connectToDatabase from '@/lib/mongodb';
-import War from '@/lib/models/War';
 import Link from 'next/link';
 
 async function getWarHistory() {
   try {
-    await connectToDatabase();
-    return await War.find({}).sort({ fetchedAt: -1 }).limit(20).lean();
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/war/history`, { cache: 'no-store' });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return response.json();
   } catch {
     return [];
   }
 }
 
 interface WarRecord {
-  _id?: { toString(): string };
+  _id?: string | { toString(): string };
   clan?: { name?: string; stars?: number; destructionPercentage?: number };
   opponent?: { name?: string; stars?: number };
   teamSize?: number;
@@ -36,6 +40,9 @@ export default async function WarHistory() {
   return (
     <div className="space-y-4">
       {wars.map((war: WarRecord) => {
+        const key = typeof war._id === 'string'
+          ? war._id
+          : war._id?.toString() || `${war.fetchedAt}-${war.clan?.name}-${war.opponent?.name}`;
         const clanStars = war.clan?.stars || 0;
         const oppStars = war.opponent?.stars || 0;
         const result = clanStars > oppStars ? 'win' : clanStars < oppStars ? 'loss' : 'draw';
@@ -46,7 +53,7 @@ export default async function WarHistory() {
         };
 
         return (
-          <div key={war._id?.toString()} className={`bg-gray-800 rounded-xl p-6 border ${resultColors[result].border}`}>
+          <div key={key} className={`bg-gray-800 rounded-xl p-6 border ${resultColors[result].border}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <span className={`px-3 py-1 rounded-full text-sm font-bold border ${resultColors[result].text} ${resultColors[result].bg} ${resultColors[result].border}`}>

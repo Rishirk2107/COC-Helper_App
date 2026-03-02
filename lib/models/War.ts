@@ -82,4 +82,6 @@ const WarSchema = new Schema<IWar>(
   { timestamps: true }
 );
 
+WarSchema.index({ startTime: 1 }, { unique: true, sparse: true });
+
 export default mongoose.models.War || mongoose.model<IWar>('War', WarSchema);

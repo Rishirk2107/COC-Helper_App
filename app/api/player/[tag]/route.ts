@@ -13,19 +13,20 @@ export async function GET(
   try {
     const tag = decodeURIComponent(params.tag);
     const apiToken = process.env.COC_API_TOKEN;
+    const clanTag = process.env.CLAN_TAG;
+    const EXPRESS_API_URL = process.env.EXPRESS_API_URL || 'http://localhost:4000';
 
     await connectToDatabase();
 
-    // Try to fetch fresh data from COC API
+    // Try to fetch fresh data from Express API
     let cocPlayerData = null;
     if (apiToken) {
-      const encodedTag = encodeURIComponent(tag);
-      const response = await fetch(`${COC_API_BASE}/players/${encodedTag}`, {
+      const response = await fetch(`${EXPRESS_API_URL}/api/player/${encodeURIComponent(tag)}`, {
         headers: {
-          Authorization: `Bearer ${apiToken}`,
+          'x-api-token': apiToken,
           'Content-Type': 'application/json',
         },
-        next: { revalidate: 300 },
+        cache: 'no-store',
       });
       if (response.ok) {
         cocPlayerData = await response.json();
